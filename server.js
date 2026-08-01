@@ -56,6 +56,32 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// необязательные поля персонажа для карточки (Персонаж/Бой на сайте) —
+// приходят только если игрок включил cfg.shareStats в скрипте; если
+// поля нет в присланном JSON, в объект игрока оно не попадает вообще
+// (а не пишется как 0/пустая строка), чтобы фронтенд мог отличить
+// "не поделился статами" от "статы нулевые"
+const PROFILE_STRING_FIELDS = ["job", "org", "position", "status"];
+const PROFILE_NUMBER_FIELDS = [
+  "level", "respect", "health", "wanted",
+  "cashSas", "cashVcs", "bank", "euro", "btc", "azCoins",
+];
+
+function extractProfileFields(b) {
+  const profile = {};
+  for (const k of PROFILE_STRING_FIELDS) {
+    if (b[k] !== undefined && b[k] !== null && String(b[k]).trim() !== "") {
+      profile[k] = String(b[k]).trim().slice(0, 64);
+    }
+  }
+  for (const k of PROFILE_NUMBER_FIELDS) {
+    if (b[k] !== undefined && b[k] !== null && b[k] !== "") {
+      profile[k] = num(b[k]);
+    }
+  }
+  return profile;
+}
+
 // ============================================================
 //  API: курсы валют
 // ============================================================
@@ -91,10 +117,16 @@ app.get("/api/rates", (req, res) => {
 //  API: ники игроков по серверу
 // ============================================================
 
-// POST { ownerKey, nick, server }  (header X-Report-Key: <secret>)
+// POST { ownerKey, nick, server, [level, job, org, position, status,
+//        respect, health, wanted, cashSas, cashVcs, bank, euro, btc,
+//        azCoins] }  (header X-Report-Key: <secret>)
 // ownerKey — тот же персистентный идентификатор, что уже используется
 // скриптом для players.html-бэкенда (cfg.ownerKey), чтобы не плодить
-// дубликаты при переустановке ника
+// дубликаты при переустановке ника.
+// Статы персонажа необязательны (скрипт шлёт их, только если игрок
+// включил cfg.shareStats) и полностью перезаписываются на каждый пинг —
+// если в текущем пинге статов нет (игрок выключил опцию), старые статы
+// удаляются из записи, а не остаются "залипшими" на сайте.
 app.post("/api/players", (req, res) => {
   if (!checkSecret(req, res)) return;
   const b = req.body || {};
@@ -103,7 +135,8 @@ app.post("/api/players", (req, res) => {
   if (!nick || !server) return res.status(400).json({ ok: false, error: "missing_fields" });
   const key = String(b.ownerKey || "").trim() || `${nick}|${server}`;
 
-  players[key] = { nick, server, lastSeen: Date.now() };
+  const profile = extractProfileFields(b);
+  players[key] = { nick, server, lastSeen: Date.now(), ...profile };
   saveJson(PLAYERS_FILE, players);
   res.json({ ok: true });
 });
