@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Игроки по серверам — PCStats</title>
+<title>Курсы валют по серверам — PCStats</title>
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --border:#262b36;
-    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --green:#3ecf8e; --gold:#e0b94a; --red:#ff5c5c;
+    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --gold:#e0b94a; --green:#3ecf8e;
   }
   *{box-sizing:border-box}
   body{
@@ -34,67 +34,36 @@
   header{margin-bottom:20px}
   h1{font-size:22px; margin:0; font-weight:600}
   .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap}
-  select, input[type=text]{
+  input[type=text], select{
     background:var(--card); border:1px solid var(--border); color:var(--text);
-    padding:8px 12px; border-radius:8px; font-size:14px; min-width:180px;
+    padding:8px 12px; border-radius:8px; font-size:14px; min-width:200px;
   }
+  select{min-width:170px}
   .meta{color:var(--dim); font-size:13px}
-  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px}
-  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:border-color .15s}
-  .card:hover{border-color:var(--accent)}
-  .nick{font-weight:600}
-  .srv{color:var(--dim); font-size:12px; margin-top:2px}
-  .seen{color:var(--green); font-size:11px; margin-top:6px}
+  .tableWrap{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  table{width:100%; border-collapse:collapse; min-width:560px}
+  thead th{
+    text-align:left; padding:10px 12px; font-size:12px; text-transform:uppercase;
+    letter-spacing:.03em; color:var(--dim); border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  tbody td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--border); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#1c2029}
+  .server{font-weight:600}
+  .num{color:var(--gold); font-variant-numeric:tabular-nums}
+  .updated{color:var(--dim); font-size:12px}
+  .fresh{color:var(--green)}
   .empty{padding:40px; text-align:center; color:var(--dim)}
-
-  /* ---------- аналитика ---------- */
-  .analytics{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:20px}
-  .analytics h2{font-size:14.5px; margin:0 0 4px}
-  .analytics .sub{color:var(--dim); font-size:12px; margin:0 0 14px}
-  .statsRow{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px}
-  .statPill{background:#1c2029; border:1px solid var(--border); border-radius:8px; padding:8px 14px}
-  .statPill .n{color:var(--gold); font-size:18px; font-weight:700}
-  .statPill .l{color:var(--dim); font-size:11px}
-  #chartWrap svg text{font-family:'Segoe UI',Roboto,Arial,sans-serif}
-
-  /* ---------- modal ---------- */
-  .overlay{
-    position:fixed; inset:0; background:rgba(6,8,12,.6); display:none;
-    align-items:center; justify-content:center; padding:16px; z-index:60;
-  }
-  .overlay.open{display:flex}
-  .modal{
-    width:100%; max-width:460px; background:var(--card); border:1px solid var(--border);
-    border-radius:14px; padding:0; max-height:86vh; display:flex; flex-direction:column; overflow:hidden;
-  }
-  .modalHead{padding:16px 18px 10px; border-bottom:1px solid var(--border)}
-  .modalNick{font-size:17px; font-weight:700}
-  .modalSrv{color:var(--dim); font-size:12px; margin-top:2px}
-  .modalClose{
-    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--dim);
-    font-size:20px; cursor:pointer; line-height:1;
-  }
-  .modalClose:hover{color:var(--text)}
-  .tabs{display:flex; border-bottom:1px solid var(--border); overflow-x:auto}
-  .tabBtn{
-    flex:1; background:none; border:none; color:var(--dim); padding:10px 8px; font-size:12.5px;
-    cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap;
-  }
-  .tabBtn.active{color:var(--text); border-bottom-color:var(--accent)}
-  .tabBody{padding:14px 18px 18px; overflow-y:auto; display:none}
-  .tabBody.active{display:block}
-  .statRow{display:flex; justify-content:space-between; gap:12px; padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--border)}
-  .statRow:last-child{border-bottom:none}
-  .statLabel{color:var(--dim)}
-  .statVal{font-weight:600; color:var(--gold); text-align:right}
-  .noStats{color:var(--dim); font-size:13px; text-align:center; padding:16px 0}
 
   /* ---------- responsive ---------- */
   @media (max-width: 640px){
     h1{font-size:18px}
     .toolbar{gap:8px}
-    select, input[type=text]{min-width:0; flex:1 1 140px; font-size:13px; padding:9px 10px}
-    .grid{grid-template-columns:repeat(auto-fill, minmax(150px,1fr))}
+    input[type=text], select{min-width:0; flex:1 1 140px; font-size:13px; padding:9px 10px}
+    thead th, tbody td{padding:8px 9px; font-size:12.5px}
   }
 </style>
 </head>
@@ -108,47 +77,44 @@
 <nav class="drawer" id="drawer">
   <div class="drawerHead">Меню</div>
   <a href="/" class="dlink">🏠 Главная</a>
-  <a href="/rates.html" class="dlink">💱 Курс валют</a>
-  <a href="/players.html" class="dlink active">🧑‍🤝‍🧑 Игроки</a>
+  <a href="/rates.html" class="dlink active">💱 Курс валют</a>
+  <a href="/players.html" class="dlink">🧑‍🤝‍🧑 Игроки</a>
 </nav>
 
 <div class="wrap">
   <header>
-    <h1>🧑‍🤝‍🧑 Игроки по серверам</h1>
+    <h1>💱 Курсы валют по серверам</h1>
   </header>
 
-  <div class="analytics">
-    <h2>Аналитика</h2>
-    <div class="sub">Сколько игроков сейчас запустили скрипт, по серверам</div>
-    <div class="statsRow" id="statsRow"></div>
-    <div id="chartWrap"></div>
-  </div>
-
   <div class="toolbar">
-    <select id="serverFilter"><option value="">Все серверы</option></select>
-    <input type="text" id="search" placeholder="Поиск ника…">
+    <input type="text" id="search" placeholder="Поиск сервера…">
+    <select id="serverSelect"><option value="">Все серверы</option></select>
     <span class="meta" id="count"></span>
   </div>
 
-  <div class="grid" id="grid"></div>
-  <div class="empty" id="emptyMsg" style="display:none">Пока никого нет — список появится, когда скрипт начнёт присылать ников.</div>
-</div>
-
-<!-- ============ ПРОФИЛЬ ИГРОКА ============ -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modalHead" style="position:relative">
-      <button class="modalClose" id="modalClose">✕</button>
-      <div class="modalNick" id="mNick">—</div>
-      <div class="modalSrv" id="mSrv">—</div>
-    </div>
-    <div class="tabs" id="tabs"></div>
-    <div id="tabBodies"></div>
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Сервер</th>
+          <th>AZ-Coins</th>
+          <th>BTC</th>
+          <th>Евро</th>
+          <th>VC$</th>
+          <th>ASC</th>
+          <th>Обновлено</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
   </div>
+  <div class="empty" id="emptyMsg" style="display:none">Пока нет данных — курсы появятся здесь после первого обновления с телефона в скрипте.</div>
 </div>
 
 <script>
-// полный список серверов Arizona RP (из ARZ_WIKI_RATES в PCStats.lua)
+// полный список серверов Arizona RP (из ARZ_WIKI_RATES в PCStats.lua) —
+// показывается в выпадающем списке независимо от того, прислал ли уже
+// скрипт данные по этому серверу
 const ARIZONA_SERVERS = [
   "Brainburg","Bumble Bee","Casa Grande","Chandler","Christmas","Drake","Faraway",
   "Gilbert","Glendale","Holiday","Kingman","Love","Mesa","Mirage","Mobile 1",
@@ -157,52 +123,32 @@ const ARIZONA_SERVERS = [
   "Surprise","Tucson","Vice City","Wednesday","Winslow","Yava","Yuma"
 ];
 
-// поля карточки игрока, сгруппированные по вкладкам — соответствуют
-// всем полям, которые скрипт реально собирает в /stats (см. parseStats
-// и appendProfileFields в PCStats.lua)
-const PROFILE_TABS = [
-  { id:"char", label:"Персонаж", fields:[
-      ["level","Уровень"], ["job","Работа"], ["org","Организация"], ["position","Должность"],
-      ["status","Статус"], ["respect","Респект"], ["accountNumber","Номер аккаунта"],
-      ["phone","Телефон"], ["citizenship","Гражданство"], ["family","Семья"], ["gender","Пол"],
-      ["bankCard","Банковская карта"], ["accountState","Состояние аккаунта"], ["authDate","Дата регистрации"],
-  ]},
-  { id:"finance", label:"Финансы", fields:[
-      ["cashSas","Наличные SA$"], ["cashVcs","Наличные VC$"], ["bank","Банк"],
-      ["euro","Евро"], ["btc","BTC"], ["azCoins","AZ-Coins"], ["moneyDay","На депозите"],
-      ["x3Payday","PayDay x3"], ["x4Payday","PayDay x4"],
-  ]},
-  { id:"combat", label:"Бой", fields:[
-      ["health","Здоровье"], ["wanted","Розыск"], ["protection","Защита"], ["regen","Регенерация"],
-      ["damage","Урон"], ["luck","Удача"], ["maxHp","Макс. HP"], ["maxArmor","Макс. брони"],
-      ["stunChance","Шанс оглушения"], ["bleedChance","Шанс кровотечения"], ["dodgeChance","Шанс уклонения"],
-      ["reflectDamage","Отражение урона"], ["blockDamage","Блокировка урона"],
-      ["fireRate","Скорострельность"], ["recoil","Отдача"], ["fruitStun","Оглушение плодом"],
-  ]},
-  { id:"other", label:"Прочее", fields:[
-      ["hotel","Отель"], ["hotelRoom","Комната"], ["trailer","Трейлер"],
-      ["lawfulness","Законопослушность"], ["warnings","Предупреждения"], ["addiction","Зависимость"],
-  ]},
-];
-
 const STORAGE_KEY = "pcstats_selected_server";
 
-let allPlayers = [];
+let allRows = [];
 
 function fmtAgo(ts){
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return "в сети только что";
+  if (s < 60) return "только что";
   const m = Math.floor(s/60);
-  return "в сети " + m + " мин назад";
+  if (m < 60) return m + " мин назад";
+  const h = Math.floor(m/60);
+  if (h < 24) return h + " ч назад";
+  const d = Math.floor(h/24);
+  return d + " дн назад";
 }
-function fmtVal(v){ return (v === undefined || v === null || v === "") ? null : v; }
-function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function fmtNum(n){
+  if (!n) return "—";
+  return Number(n).toLocaleString("ru-RU");
+}
 
 function initServerSelect(){
-  const sel = document.getElementById("serverFilter");
+  const sel = document.getElementById("serverSelect");
   sel.innerHTML = '<option value="">Все серверы</option>' +
     ARIZONA_SERVERS.map(s => `<option value="${s}">${s}</option>`).join("");
-  // восстанавливаем ранее выбранный сервер вместо сброса на "Все серверы"
+  // восстанавливаем ранее выбранный сервер, чтобы он не сбрасывался
+  // на "Все серверы" при каждом обновлении страницы
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved && ARIZONA_SERVERS.includes(saved)) {
     sel.value = saved;
@@ -210,127 +156,34 @@ function initServerSelect(){
 }
 
 function render(){
-  const serverQ = document.getElementById("serverFilter").value.trim().toLowerCase();
-  const nickQ = document.getElementById("search").value.trim().toLowerCase();
-
-  const rows = allPlayers.filter(p =>
-    (!serverQ || String(p.server||"").trim().toLowerCase() === serverQ) &&
-    (!nickQ || p.nick.toLowerCase().includes(nickQ))
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const srv = document.getElementById("serverSelect").value;
+  const rows = allRows.filter(r =>
+    r.server.toLowerCase().includes(q) &&
+    (!srv || r.server.trim().toLowerCase() === srv.trim().toLowerCase())
   );
+  document.getElementById("count").textContent = rows.length + " сервер(ов)";
+  document.getElementById("emptyMsg").style.display = allRows.length ? "none" : "block";
 
-  document.getElementById("count").textContent = rows.length + " игрок(ов) онлайн";
-  document.getElementById("emptyMsg").style.display = allPlayers.length ? "none" : "block";
-
-  document.getElementById("grid").innerHTML = rows.map((p) => `
-    <div class="card" data-idx="${allPlayers.indexOf(p)}">
-      <div class="nick">${esc(p.nick)}</div>
-      <div class="srv">${esc(p.server)}</div>
-      <div class="seen">${fmtAgo(p.lastSeen)}</div>
-    </div>
-  `).join("");
-
-  document.querySelectorAll(".card").forEach(el => {
-    el.addEventListener("click", () => openProfile(allPlayers[el.dataset.idx]));
-  });
-
-  renderAnalytics();
-}
-
-/* ---------- аналитика: сколько игроков и на каких серверах ---------- */
-function renderAnalytics(){
-  const counts = {};
-  allPlayers.forEach(p => { counts[p.server] = (counts[p.server] || 0) + 1; });
-  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
-
-  document.getElementById("statsRow").innerHTML = `
-    <div class="statPill"><div class="n">${allPlayers.length}</div><div class="l">игроков онлайн</div></div>
-    <div class="statPill"><div class="n">${entries.length}</div><div class="l">активных серверов</div></div>
-  `;
-
-  const wrap = document.getElementById("chartWrap");
-  if (entries.length === 0){
-    wrap.innerHTML = '<div class="empty" style="padding:20px 0">Пока нет данных для графика</div>';
-    return;
-  }
-
-  const barH = 22, gap = 8, leftW = 110, rightPad = 34, width = 640;
-  const max = entries[0][1];
-  const height = entries.length * (barH + gap);
-
-  let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="overflow:visible">`;
-  entries.forEach(([server, count], i) => {
-    const y = i * (barH + gap);
-    const barMaxW = width - leftW - rightPad;
-    const barW = Math.max(4, (count / max) * barMaxW);
-    svg += `<text x="0" y="${y + barH*0.7}" fill="#e7e9ee" font-size="12">${esc(server)}</text>`;
-    svg += `<rect x="${leftW}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="#3aa0ff" opacity="0.85"/>`;
-    svg += `<text x="${leftW + barW + 8}" y="${y + barH*0.7}" fill="#e0b94a" font-size="12" font-weight="700">${count}</text>`;
-  });
-  svg += `</svg>`;
-  wrap.innerHTML = svg;
-}
-
-/* ---------- профиль игрока (карточка со всеми полями) ---------- */
-function hasAnyStats(p){
-  const base = new Set(["nick","server","lastSeen"]);
-  return Object.keys(p).some(k => !base.has(k) && p[k] !== undefined && p[k] !== null && p[k] !== "");
-}
-
-function statRow(label, val){
-  return `<div class="statRow"><span class="statLabel">${esc(label)}</span><span class="statVal">${esc(val)}</span></div>`;
-}
-
-function openProfile(p){
-  document.getElementById("mNick").textContent = p.nick;
-  document.getElementById("mSrv").textContent = p.server;
-
-  const tabsEl = document.getElementById("tabs");
-  const bodiesEl = document.getElementById("tabBodies");
-
-  if (!hasAnyStats(p)){
-    tabsEl.innerHTML = "";
-    bodiesEl.innerHTML = '<div class="tabBody active"><div class="noStats">Игрок не поделился статистикой персонажа</div></div>';
-    document.getElementById("overlay").classList.add("open");
-    return;
-  }
-
-  tabsEl.innerHTML = PROFILE_TABS.map((t, i) =>
-    `<button class="tabBtn ${i===0?"active":""}" data-tab="${t.id}">${esc(t.label)}</button>`
-  ).join("");
-
-  bodiesEl.innerHTML = PROFILE_TABS.map((t, i) => {
-    const rows = t.fields
-      .map(([key, label]) => [label, fmtVal(p[key])])
-      .filter(([, v]) => v !== null)
-      .map(([label, v]) => statRow(label, v))
-      .join("");
-    return `<div class="tabBody ${i===0?"active":""}" data-tab="${t.id}">${rows || '<div class="noStats">Нет данных по этому разделу</div>'}</div>`;
+  document.getElementById("rows").innerHTML = rows.map(r => {
+    const fresh = (Date.now() - r.updatedAt) < 10*60*1000;
+    return `<tr>
+      <td class="server">${r.server}</td>
+      <td class="num">${fmtNum(r.az)}</td>
+      <td class="num">${fmtNum(r.btc)}</td>
+      <td class="num">${fmtNum(r.eur)}</td>
+      <td class="num">${fmtNum(r.vc)}</td>
+      <td class="num">${fmtNum(r.asc)}</td>
+      <td class="updated ${fresh ? "fresh" : ""}">${fmtAgo(r.updatedAt)}</td>
+    </tr>`;
   }).join("");
-
-  tabsEl.querySelectorAll(".tabBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabsEl.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
-      bodiesEl.querySelectorAll(".tabBody").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      bodiesEl.querySelector(`.tabBody[data-tab="${btn.dataset.tab}"]`).classList.add("active");
-    });
-  });
-
-  document.getElementById("overlay").classList.add("open");
 }
-
-document.getElementById("modalClose").addEventListener("click", () => {
-  document.getElementById("overlay").classList.remove("open");
-});
-document.getElementById("overlay").addEventListener("click", e => {
-  if (e.target.id === "overlay") document.getElementById("overlay").classList.remove("open");
-});
 
 async function load(){
   try{
-    const res = await fetch("/api/players");
+    const res = await fetch("/api/rates");
     const data = await res.json();
-    allPlayers = data.players || [];
+    allRows = data.servers || [];
     render();
   }catch(e){
     console.error(e);
@@ -339,12 +192,12 @@ async function load(){
 
 initServerSelect();
 document.getElementById("search").addEventListener("input", render);
-document.getElementById("serverFilter").addEventListener("change", e => {
+document.getElementById("serverSelect").addEventListener("change", e => {
   localStorage.setItem(STORAGE_KEY, e.target.value);
   render();
 });
 load();
-setInterval(load, 20000); // авто-обновление раз в 20 сек
+setInterval(load, 30000); // авто-обновление раз в 30 сек
 
 /* ---------- выдвижное меню ---------- */
 (function(){
