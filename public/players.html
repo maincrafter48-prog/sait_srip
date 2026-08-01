@@ -3,119 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Игроки по серверам — PCStats</title>
+<title>Курсы валют по серверам — PCStats</title>
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --border:#262b36;
-    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --green:#3ecf8e; --gold:#e0b94a; --red:#ff5c5c;
+    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --gold:#e0b94a; --green:#3ecf8e;
   }
   *{box-sizing:border-box}
   body{
     margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif;
     background:radial-gradient(1200px 600px at 20% -10%, #17203a 0%, var(--bg) 60%);
-    color:var(--text); min-height:100vh; padding:24px 16px 60px;
+    color:var(--text); min-height:100vh;
   }
-  .wrap{max-width:960px; margin:0 auto}
-  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px}
-  h1{font-size:22px; margin:0; font-weight:600}
-  nav a{color:var(--dim); text-decoration:none; margin-left:16px; font-size:14px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; display:inline-block}
-  nav a.active, nav a:hover{color:var(--text); border-color:var(--accent)}
-  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap}
-  select, input[type=text]{
-    background:var(--card); border:1px solid var(--border); color:var(--text);
-    padding:8px 12px; border-radius:8px; font-size:14px; min-width:180px;
-  }
-  .meta{color:var(--dim); font-size:13px}
-  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px}
-  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:border-color .15s}
-  .card:hover{border-color:var(--accent)}
-  .nick{font-weight:600}
-  .srv{color:var(--dim); font-size:12px; margin-top:2px}
-  .seen{color:var(--green); font-size:11px; margin-top:6px}
-  .empty{padding:40px; text-align:center; color:var(--dim)}
 
-  /* ---------- modal ---------- */
-  .overlay{
-    position:fixed; inset:0; background:rgba(6,8,12,.6); display:none;
-    align-items:center; justify-content:center; padding:16px; z-index:40;
+  /* ---------- топбар + выдвижное меню ---------- */
+  .topbar{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(15,17,21,.92); backdrop-filter:blur(6px); border-bottom:1px solid var(--border)}
+  .hbtn{background:var(--card); border:1px solid var(--border); color:var(--text); font-size:18px; width:38px; height:38px; border-radius:8px; cursor:pointer; line-height:1}
+  .hbtn:hover{border-color:var(--accent)}
+  .brand{font-weight:700; font-size:15px}
+  .drawerOverlay{position:fixed; inset:0; background:rgba(6,8,12,.55); display:none; z-index:40}
+  .drawerOverlay.open{display:block}
+  .drawer{position:fixed; top:0; left:0; bottom:0; width:250px; max-width:80vw; background:var(--card); border-right:1px solid var(--border); z-index:50; transform:translateX(-100%); transition:transform .2s ease; display:flex; flex-direction:column; padding:14px 0}
+  .drawer.open{transform:translateX(0)}
+  .drawerHead{padding:8px 18px 14px; color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); margin-bottom:8px}
+  .dlink{display:flex; align-items:center; gap:10px; padding:11px 18px; color:var(--text); text-decoration:none; font-size:14.5px}
+  .dlink:hover{background:#1c2029}
+  .dlink.active{color:var(--accent); font-weight:600}
+
+  .wrap{max-width:960px; margin:0 auto; padding:24px 16px 60px}
+  header{margin-bottom:20px}
+  h1{font-size:22px; margin:0; font-weight:600}
+  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap}
+  input[type=text], select{
+    background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:8px 12px; border-radius:8px; font-size:14px; min-width:200px;
   }
-  .overlay.open{display:flex}
-  .modal{
-    width:100%; max-width:420px; background:var(--card); border:1px solid var(--border);
-    border-radius:14px; padding:0; max-height:86vh; display:flex; flex-direction:column; overflow:hidden;
+  select{min-width:170px}
+  .meta{color:var(--dim); font-size:13px}
+  .tableWrap{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
-  .modalHead{padding:16px 18px 10px; border-bottom:1px solid var(--border)}
-  .modalNick{font-size:17px; font-weight:700}
-  .modalSrv{color:var(--dim); font-size:12px; margin-top:2px}
-  .modalClose{
-    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--dim);
-    font-size:20px; cursor:pointer; line-height:1;
+  table{width:100%; border-collapse:collapse; min-width:560px}
+  thead th{
+    text-align:left; padding:10px 12px; font-size:12px; text-transform:uppercase;
+    letter-spacing:.03em; color:var(--dim); border-bottom:1px solid var(--border); white-space:nowrap;
   }
-  .modalClose:hover{color:var(--text)}
-  .tabs{display:flex; border-bottom:1px solid var(--border)}
-  .tabBtn{
-    flex:1; background:none; border:none; color:var(--dim); padding:10px; font-size:13px;
-    cursor:pointer; border-bottom:2px solid transparent;
-  }
-  .tabBtn.active{color:var(--text); border-bottom-color:var(--accent)}
-  .tabBody{padding:14px 18px 18px; overflow-y:auto}
-  .statRow{display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--border)}
-  .statRow:last-child{border-bottom:none}
-  .statLabel{color:var(--dim)}
-  .statVal{font-weight:600; color:var(--gold)}
-  .noStats{color:var(--dim); font-size:13px; text-align:center; padding:16px 0}
+  tbody td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--border); white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#1c2029}
+  .server{font-weight:600}
+  .num{color:var(--gold); font-variant-numeric:tabular-nums}
+  .updated{color:var(--dim); font-size:12px}
+  .fresh{color:var(--green)}
+  .empty{padding:40px; text-align:center; color:var(--dim)}
 
   /* ---------- responsive ---------- */
   @media (max-width: 640px){
-    body{padding:16px 10px 50px}
     h1{font-size:18px}
     .toolbar{gap:8px}
-    select, input[type=text]{min-width:0; flex:1 1 140px; font-size:13px; padding:9px 10px}
-    nav a{margin-left:0; font-size:13px; padding:6px 10px}
-    header{gap:8px}
-    .grid{grid-template-columns:repeat(auto-fill, minmax(150px,1fr))}
+    input[type=text], select{min-width:0; flex:1 1 140px; font-size:13px; padding:9px 10px}
+    thead th, tbody td{padding:8px 9px; font-size:12.5px}
   }
 </style>
 </head>
 <body>
+
+<div class="topbar">
+  <button class="hbtn" id="hbtn" aria-label="Меню">☰</button>
+  <div class="brand">PC Stats</div>
+</div>
+<div class="drawerOverlay" id="drawerOverlay"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawerHead">Меню</div>
+  <a href="/" class="dlink">🏠 Главная</a>
+  <a href="/rates.html" class="dlink active">💱 Курс валют</a>
+  <a href="/players.html" class="dlink">🧑‍🤝‍🧑 Игроки</a>
+</nav>
+
 <div class="wrap">
   <header>
-    <h1>🧑‍🤝‍🧑 Игроки по серверам</h1>
-    <nav>
-      <a href="/">Курсы</a>
-      <a href="/players.html" class="active">Игроки</a>
-    </nav>
+    <h1>💱 Курсы валют по серверам</h1>
   </header>
 
   <div class="toolbar">
-    <select id="serverFilter"><option value="">Все серверы</option></select>
-    <input type="text" id="search" placeholder="Поиск ника…">
+    <input type="text" id="search" placeholder="Поиск сервера…">
+    <select id="serverSelect"><option value="">Все серверы</option></select>
     <span class="meta" id="count"></span>
   </div>
 
-  <div class="grid" id="grid"></div>
-  <div class="empty" id="emptyMsg" style="display:none">Пока никого нет — список появится, когда скрипт начнёт присылать ников.</div>
-</div>
-
-<!-- ============ ПРОФИЛЬ ИГРОКА ============ -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modalHead" style="position:relative">
-      <button class="modalClose" id="modalClose">✕</button>
-      <div class="modalNick" id="mNick">—</div>
-      <div class="modalSrv" id="mSrv">—</div>
-    </div>
-    <div class="tabs">
-      <button class="tabBtn active" data-tab="char">Персонаж</button>
-      <button class="tabBtn" data-tab="combat">Бой</button>
-    </div>
-    <div class="tabBody" id="tabChar"></div>
-    <div class="tabBody" id="tabCombat" style="display:none"></div>
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Сервер</th>
+          <th>AZ-Coins</th>
+          <th>BTC</th>
+          <th>Евро</th>
+          <th>VC$</th>
+          <th>ASC</th>
+          <th>Обновлено</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
   </div>
+  <div class="empty" id="emptyMsg" style="display:none">Пока нет данных — курсы появятся здесь после первого обновления с телефона в скрипте.</div>
 </div>
 
 <script>
-// полный список серверов Arizona RP (из ARZ_WIKI_RATES в PCStats.lua)
+// полный список серверов Arizona RP (из ARZ_WIKI_RATES в PCStats.lua) —
+// показывается в выпадающем списке независимо от того, прислал ли уже
+// скрипт данные по этому серверу
 const ARIZONA_SERVERS = [
   "Brainburg","Bumble Bee","Casa Grande","Chandler","Christmas","Drake","Faraway",
   "Gilbert","Glendale","Holiday","Kingman","Love","Mesa","Mirage","Mobile 1",
@@ -124,117 +123,67 @@ const ARIZONA_SERVERS = [
   "Surprise","Tucson","Vice City","Wednesday","Winslow","Yava","Yuma"
 ];
 
-let allPlayers = [];
+const STORAGE_KEY = "pcstats_selected_server";
+
+let allRows = [];
 
 function fmtAgo(ts){
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return "в сети только что";
+  if (s < 60) return "только что";
   const m = Math.floor(s/60);
-  return "в сети " + m + " мин назад";
+  if (m < 60) return m + " мин назад";
+  const h = Math.floor(m/60);
+  if (h < 24) return h + " ч назад";
+  const d = Math.floor(h/24);
+  return d + " дн назад";
 }
-function fmtNum(n){ return (n === undefined || n === null) ? "—" : Number(n).toLocaleString("ru-RU"); }
-function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function fmtNum(n){
+  if (!n) return "—";
+  return Number(n).toLocaleString("ru-RU");
+}
 
 function initServerSelect(){
-  const sel = document.getElementById("serverFilter");
+  const sel = document.getElementById("serverSelect");
   sel.innerHTML = '<option value="">Все серверы</option>' +
     ARIZONA_SERVERS.map(s => `<option value="${s}">${s}</option>`).join("");
+  // восстанавливаем ранее выбранный сервер, чтобы он не сбрасывался
+  // на "Все серверы" при каждом обновлении страницы
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved && ARIZONA_SERVERS.includes(saved)) {
+    sel.value = saved;
+  }
 }
 
 function render(){
-  const serverQ = document.getElementById("serverFilter").value;
-  const nickQ = document.getElementById("search").value.trim().toLowerCase();
-
-  const rows = allPlayers.filter(p =>
-    (!serverQ || p.server === serverQ) &&
-    (!nickQ || p.nick.toLowerCase().includes(nickQ))
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const srv = document.getElementById("serverSelect").value;
+  const rows = allRows.filter(r =>
+    r.server.toLowerCase().includes(q) &&
+    (!srv || r.server.trim().toLowerCase() === srv.trim().toLowerCase())
   );
+  document.getElementById("count").textContent = rows.length + " сервер(ов)";
+  document.getElementById("emptyMsg").style.display = allRows.length ? "none" : "block";
 
-  document.getElementById("count").textContent = rows.length + " игрок(ов) онлайн";
-  document.getElementById("emptyMsg").style.display = allPlayers.length ? "none" : "block";
-
-  document.getElementById("grid").innerHTML = rows.map((p, i) => `
-    <div class="card" data-idx="${allPlayers.indexOf(p)}">
-      <div class="nick">${esc(p.nick)}</div>
-      <div class="srv">${esc(p.server)}</div>
-      <div class="seen">${fmtAgo(p.lastSeen)}</div>
-    </div>
-  `).join("");
-
-  document.querySelectorAll(".card").forEach(el => {
-    el.addEventListener("click", () => openProfile(allPlayers[el.dataset.idx]));
-  });
-}
-
-/* ---------- профиль (карточка Персонаж/Бой) ---------- */
-function statRow(label, val){
-  return `<div class="statRow"><span class="statLabel">${label}</span><span class="statVal">${val}</span></div>`;
-}
-
-function openProfile(p){
-  document.getElementById("mNick").textContent = p.nick;
-  document.getElementById("mSrv").textContent = p.server;
-
-  const hasStats = p.level !== undefined || p.job !== undefined || p.health !== undefined;
-
-  if (!hasStats){
-    document.getElementById("tabChar").innerHTML = '<div class="noStats">Игрок не поделился статистикой персонажа</div>';
-    document.getElementById("tabCombat").innerHTML = '<div class="noStats">Игрок не поделился статистикой персонажа</div>';
-  } else {
-    document.getElementById("tabChar").innerHTML =
-      statRow("Уровень", fmtNum(p.level)) +
-      statRow("Работа", esc(p.job) || "—") +
-      statRow("Организация", esc(p.org) || "—") +
-      statRow("Должность", esc(p.position) || "—") +
-      statRow("Статус", esc(p.status) || "—") +
-      statRow("Респект", fmtNum(p.respect)) +
-      statRow("Наличные SA$", fmtNum(p.cashSas)) +
-      statRow("Наличные VC$", fmtNum(p.cashVcs)) +
-      statRow("Банк", fmtNum(p.bank)) +
-      statRow("Евро", fmtNum(p.euro)) +
-      statRow("BTC", fmtNum(p.btc)) +
-      statRow("AZ-Coins", fmtNum(p.azCoins));
-
-    document.getElementById("tabCombat").innerHTML =
-      statRow("Здоровье", p.health !== undefined ? p.health + " HP" : "—") +
-      statRow("Розыск", p.wanted !== undefined ? p.wanted + " ⭐" : "—");
-  }
-
-  document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
-  document.querySelector('.tabBtn[data-tab="char"]').classList.add("active");
-  document.getElementById("tabChar").style.display = "block";
-  document.getElementById("tabCombat").style.display = "none";
-
-  document.getElementById("overlay").classList.add("open");
-}
-
-document.querySelectorAll(".tabBtn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    const isChar = btn.dataset.tab === "char";
-    document.getElementById("tabChar").style.display = isChar ? "block" : "none";
-    document.getElementById("tabCombat").style.display = isChar ? "none" : "block";
-  });
-});
-
-document.getElementById("modalClose").addEventListener("click", () => {
-  document.getElementById("overlay").classList.remove("open");
-});
-document.getElementById("overlay").addEventListener("click", e => {
-  if (e.target.id === "overlay") document.getElementById("overlay").classList.remove("open");
-});
-
-function updateServerOptions(){
-  // выпадающий список теперь статичен (все 36 серверов), пере-init не нужен —
-  // просто сохраняем текущий выбор пользователя при перезагрузке данных
+  document.getElementById("rows").innerHTML = rows.map(r => {
+    const fresh = (Date.now() - r.updatedAt) < 10*60*1000;
+    return `<tr>
+      <td class="server">${r.server}</td>
+      <td class="num">${fmtNum(r.az)}</td>
+      <td class="num">${fmtNum(r.btc)}</td>
+      <td class="num">${fmtNum(r.eur)}</td>
+      <td class="num">${fmtNum(r.vc)}</td>
+      <td class="num">${fmtNum(r.asc)}</td>
+      <td class="updated ${fresh ? "fresh" : ""}">${fmtAgo(r.updatedAt)}</td>
+    </tr>`;
+  }).join("");
 }
 
 async function load(){
   try{
-    const res = await fetch("/api/players");
+    const res = await fetch("/api/rates");
     const data = await res.json();
-    allPlayers = data.players || [];
+    allRows = data.servers || [];
     render();
   }catch(e){
     console.error(e);
@@ -243,9 +192,25 @@ async function load(){
 
 initServerSelect();
 document.getElementById("search").addEventListener("input", render);
-document.getElementById("serverFilter").addEventListener("change", render);
+document.getElementById("serverSelect").addEventListener("change", e => {
+  localStorage.setItem(STORAGE_KEY, e.target.value);
+  render();
+});
 load();
-setInterval(load, 20000); // авто-обновление раз в 20 сек
+setInterval(load, 30000); // авто-обновление раз в 30 сек
+
+/* ---------- выдвижное меню ---------- */
+(function(){
+  const btn = document.getElementById("hbtn");
+  const drawer = document.getElementById("drawer");
+  const overlay = document.getElementById("drawerOverlay");
+  function open(){ drawer.classList.add("open"); overlay.classList.add("open"); }
+  function close(){ drawer.classList.remove("open"); overlay.classList.remove("open"); }
+  btn.addEventListener("click", open);
+  overlay.addEventListener("click", close);
+  document.querySelectorAll(".dlink").forEach(a => a.addEventListener("click", close));
+})();
 </script>
 </body>
 </html>
+
