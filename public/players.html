@@ -1,1 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Игроки по серверам — PCStats</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --border:#262b36;
+    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --green:#3ecf8e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 20% -10%, #17203a 0%, var(--bg) 60%);
+    color:var(--text); min-height:100vh; padding:24px 16px 60px;
+  }
+  .wrap{max-width:960px; margin:0 auto}
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px}
+  h1{font-size:22px; margin:0; font-weight:600}
+  nav a{color:var(--dim); text-decoration:none; margin-left:16px; font-size:14px; padding:6px 12px; border:1px solid var(--border); border-radius:8px}
+  nav a.active, nav a:hover{color:var(--text); border-color:var(--accent)}
+  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap}
+  select, input[type=text]{
+    background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:8px 12px; border-radius:8px; font-size:14px; min-width:180px;
+  }
+  .meta{color:var(--dim); font-size:13px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px}
+  .nick{font-weight:600}
+  .srv{color:var(--dim); font-size:12px; margin-top:2px}
+  .seen{color:var(--green); font-size:11px; margin-top:6px}
+  .empty{padding:40px; text-align:center; color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧑‍🤝‍🧑 Игроки по серверам</h1>
+    <nav>
+      <a href="/">Курсы</a>
+      <a href="/players.html" class="active">Игроки</a>
+    </nav>
+  </header>
 
+  <div class="toolbar">
+    <select id="serverFilter">
+      <option value="">Все серверы</option>
+    </select>
+    <input type="text" id="search" placeholder="Поиск ника…">
+    <span class="meta" id="count"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="emptyMsg" style="display:none">Пока никого нет — список появится, когда скрипт начнёт присылать ников.</div>
+</div>
+
+<script>
+let allPlayers = [];
+
+function fmtAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "в сети только что";
+  const m = Math.floor(s/60);
+  return "в сети " + m + " мин назад";
+}
+
+function render(){
+  const serverQ = document.getElementById("serverFilter").value;
+  const nickQ = document.getElementById("search").value.trim().toLowerCase();
+
+  const rows = allPlayers.filter(p =>
+    (!serverQ || p.server === serverQ) &&
+    (!nickQ || p.nick.toLowerCase().includes(nickQ))
+  );
+
+  document.getElementById("count").textContent = rows.length + " игрок(ов) онлайн";
+  document.getElementById("emptyMsg").style.display = allPlayers.length ? "none" : "block";
+
+  document.getElementById("grid").innerHTML = rows.map(p => `
+    <div class="card">
+      <div class="nick">${p.nick}</div>
+      <div class="srv">${p.server}</div>
+      <div class="seen">${fmtAgo(p.lastSeen)}</div>
+    </div>
+  `).join("");
+}
+
+function updateServerOptions(){
+  const sel = document.getElementById("serverFilter");
+  const current = sel.value;
+  const servers = [...new Set(allPlayers.map(p => p.server))].sort();
+  sel.innerHTML = '<option value="">Все серверы</option>' +
+    servers.map(s => `<option value="${s}">${s}</option>`).join("");
+  sel.value = servers.includes(current) ? current : "";
+}
+
+async function load(){
+  try{
+    const res = await fetch("/api/players");
+    const data = await res.json();
+    allPlayers = data.players || [];
+    updateServerOptions();
+    render();
+  }catch(e){
+    console.error(e);
+  }
+}
+
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("serverFilter").addEventListener("change", render);
+load();
+setInterval(load, 20000); // авто-обновление раз в 20 сек
+</script>
+</body>
+</html>
