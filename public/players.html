@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --border:#262b36;
-    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --green:#3ecf8e;
+    --text:#e7e9ee; --dim:#8a90a0; --accent:#3aa0ff; --green:#3ecf8e; --gold:#e0b94a; --red:#ff5c5c;
   }
   *{box-sizing:border-box}
   body{
@@ -18,7 +18,7 @@
   .wrap{max-width:960px; margin:0 auto}
   header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px}
   h1{font-size:22px; margin:0; font-weight:600}
-  nav a{color:var(--dim); text-decoration:none; margin-left:16px; font-size:14px; padding:6px 12px; border:1px solid var(--border); border-radius:8px}
+  nav a{color:var(--dim); text-decoration:none; margin-left:16px; font-size:14px; padding:6px 12px; border:1px solid var(--border); border-radius:8px; display:inline-block}
   nav a.active, nav a:hover{color:var(--text); border-color:var(--accent)}
   .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap}
   select, input[type=text]{
@@ -27,11 +27,54 @@
   }
   .meta{color:var(--dim); font-size:13px}
   .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:10px}
-  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; transition:border-color .15s}
+  .card:hover{border-color:var(--accent)}
   .nick{font-weight:600}
   .srv{color:var(--dim); font-size:12px; margin-top:2px}
   .seen{color:var(--green); font-size:11px; margin-top:6px}
   .empty{padding:40px; text-align:center; color:var(--dim)}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(6,8,12,.6); display:none;
+    align-items:center; justify-content:center; padding:16px; z-index:40;
+  }
+  .overlay.open{display:flex}
+  .modal{
+    width:100%; max-width:420px; background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:0; max-height:86vh; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .modalHead{padding:16px 18px 10px; border-bottom:1px solid var(--border)}
+  .modalNick{font-size:17px; font-weight:700}
+  .modalSrv{color:var(--dim); font-size:12px; margin-top:2px}
+  .modalClose{
+    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--dim);
+    font-size:20px; cursor:pointer; line-height:1;
+  }
+  .modalClose:hover{color:var(--text)}
+  .tabs{display:flex; border-bottom:1px solid var(--border)}
+  .tabBtn{
+    flex:1; background:none; border:none; color:var(--dim); padding:10px; font-size:13px;
+    cursor:pointer; border-bottom:2px solid transparent;
+  }
+  .tabBtn.active{color:var(--text); border-bottom-color:var(--accent)}
+  .tabBody{padding:14px 18px 18px; overflow-y:auto}
+  .statRow{display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--border)}
+  .statRow:last-child{border-bottom:none}
+  .statLabel{color:var(--dim)}
+  .statVal{font-weight:600; color:var(--gold)}
+  .noStats{color:var(--dim); font-size:13px; text-align:center; padding:16px 0}
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 640px){
+    body{padding:16px 10px 50px}
+    h1{font-size:18px}
+    .toolbar{gap:8px}
+    select, input[type=text]{min-width:0; flex:1 1 140px; font-size:13px; padding:9px 10px}
+    nav a{margin-left:0; font-size:13px; padding:6px 10px}
+    header{gap:8px}
+    .grid{grid-template-columns:repeat(auto-fill, minmax(150px,1fr))}
+  }
 </style>
 </head>
 <body>
@@ -45,9 +88,7 @@
   </header>
 
   <div class="toolbar">
-    <select id="serverFilter">
-      <option value="">Все серверы</option>
-    </select>
+    <select id="serverFilter"><option value="">Все серверы</option></select>
     <input type="text" id="search" placeholder="Поиск ника…">
     <span class="meta" id="count"></span>
   </div>
@@ -56,7 +97,33 @@
   <div class="empty" id="emptyMsg" style="display:none">Пока никого нет — список появится, когда скрипт начнёт присылать ников.</div>
 </div>
 
+<!-- ============ ПРОФИЛЬ ИГРОКА ============ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modalHead" style="position:relative">
+      <button class="modalClose" id="modalClose">✕</button>
+      <div class="modalNick" id="mNick">—</div>
+      <div class="modalSrv" id="mSrv">—</div>
+    </div>
+    <div class="tabs">
+      <button class="tabBtn active" data-tab="char">Персонаж</button>
+      <button class="tabBtn" data-tab="combat">Бой</button>
+    </div>
+    <div class="tabBody" id="tabChar"></div>
+    <div class="tabBody" id="tabCombat" style="display:none"></div>
+  </div>
+</div>
+
 <script>
+// полный список серверов Arizona RP (из ARZ_WIKI_RATES в PCStats.lua)
+const ARIZONA_SERVERS = [
+  "Brainburg","Bumble Bee","Casa Grande","Chandler","Christmas","Drake","Faraway",
+  "Gilbert","Glendale","Holiday","Kingman","Love","Mesa","Mirage","Mobile 1",
+  "Mobile 2","Mobile 3","Page","Payson","Phoenix","Prescott","Queen Creek",
+  "Red Rock","Saint Rose","Scottdale","Sedona","Show Low","Space","Sun City",
+  "Surprise","Tucson","Vice City","Wednesday","Winslow","Yava","Yuma"
+];
+
 let allPlayers = [];
 
 function fmtAgo(ts){
@@ -64,6 +131,14 @@ function fmtAgo(ts){
   if (s < 60) return "в сети только что";
   const m = Math.floor(s/60);
   return "в сети " + m + " мин назад";
+}
+function fmtNum(n){ return (n === undefined || n === null) ? "—" : Number(n).toLocaleString("ru-RU"); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function initServerSelect(){
+  const sel = document.getElementById("serverFilter");
+  sel.innerHTML = '<option value="">Все серверы</option>' +
+    ARIZONA_SERVERS.map(s => `<option value="${s}">${s}</option>`).join("");
 }
 
 function render(){
@@ -78,22 +153,81 @@ function render(){
   document.getElementById("count").textContent = rows.length + " игрок(ов) онлайн";
   document.getElementById("emptyMsg").style.display = allPlayers.length ? "none" : "block";
 
-  document.getElementById("grid").innerHTML = rows.map(p => `
-    <div class="card">
-      <div class="nick">${p.nick}</div>
-      <div class="srv">${p.server}</div>
+  document.getElementById("grid").innerHTML = rows.map((p, i) => `
+    <div class="card" data-idx="${allPlayers.indexOf(p)}">
+      <div class="nick">${esc(p.nick)}</div>
+      <div class="srv">${esc(p.server)}</div>
       <div class="seen">${fmtAgo(p.lastSeen)}</div>
     </div>
   `).join("");
+
+  document.querySelectorAll(".card").forEach(el => {
+    el.addEventListener("click", () => openProfile(allPlayers[el.dataset.idx]));
+  });
 }
 
+/* ---------- профиль (карточка Персонаж/Бой) ---------- */
+function statRow(label, val){
+  return `<div class="statRow"><span class="statLabel">${label}</span><span class="statVal">${val}</span></div>`;
+}
+
+function openProfile(p){
+  document.getElementById("mNick").textContent = p.nick;
+  document.getElementById("mSrv").textContent = p.server;
+
+  const hasStats = p.level !== undefined || p.job !== undefined || p.health !== undefined;
+
+  if (!hasStats){
+    document.getElementById("tabChar").innerHTML = '<div class="noStats">Игрок не поделился статистикой персонажа</div>';
+    document.getElementById("tabCombat").innerHTML = '<div class="noStats">Игрок не поделился статистикой персонажа</div>';
+  } else {
+    document.getElementById("tabChar").innerHTML =
+      statRow("Уровень", fmtNum(p.level)) +
+      statRow("Работа", esc(p.job) || "—") +
+      statRow("Организация", esc(p.org) || "—") +
+      statRow("Должность", esc(p.position) || "—") +
+      statRow("Статус", esc(p.status) || "—") +
+      statRow("Респект", fmtNum(p.respect)) +
+      statRow("Наличные SA$", fmtNum(p.cashSas)) +
+      statRow("Наличные VC$", fmtNum(p.cashVcs)) +
+      statRow("Банк", fmtNum(p.bank)) +
+      statRow("Евро", fmtNum(p.euro)) +
+      statRow("BTC", fmtNum(p.btc)) +
+      statRow("AZ-Coins", fmtNum(p.azCoins));
+
+    document.getElementById("tabCombat").innerHTML =
+      statRow("Здоровье", p.health !== undefined ? p.health + " HP" : "—") +
+      statRow("Розыск", p.wanted !== undefined ? p.wanted + " ⭐" : "—");
+  }
+
+  document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+  document.querySelector('.tabBtn[data-tab="char"]').classList.add("active");
+  document.getElementById("tabChar").style.display = "block";
+  document.getElementById("tabCombat").style.display = "none";
+
+  document.getElementById("overlay").classList.add("open");
+}
+
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const isChar = btn.dataset.tab === "char";
+    document.getElementById("tabChar").style.display = isChar ? "block" : "none";
+    document.getElementById("tabCombat").style.display = isChar ? "none" : "block";
+  });
+});
+
+document.getElementById("modalClose").addEventListener("click", () => {
+  document.getElementById("overlay").classList.remove("open");
+});
+document.getElementById("overlay").addEventListener("click", e => {
+  if (e.target.id === "overlay") document.getElementById("overlay").classList.remove("open");
+});
+
 function updateServerOptions(){
-  const sel = document.getElementById("serverFilter");
-  const current = sel.value;
-  const servers = [...new Set(allPlayers.map(p => p.server))].sort();
-  sel.innerHTML = '<option value="">Все серверы</option>' +
-    servers.map(s => `<option value="${s}">${s}</option>`).join("");
-  sel.value = servers.includes(current) ? current : "";
+  // выпадающий список теперь статичен (все 36 серверов), пере-init не нужен —
+  // просто сохраняем текущий выбор пользователя при перезагрузке данных
 }
 
 async function load(){
@@ -101,13 +235,13 @@ async function load(){
     const res = await fetch("/api/players");
     const data = await res.json();
     allPlayers = data.players || [];
-    updateServerOptions();
     render();
   }catch(e){
     console.error(e);
   }
 }
 
+initServerSelect();
 document.getElementById("search").addEventListener("input", render);
 document.getElementById("serverFilter").addEventListener("change", render);
 load();
