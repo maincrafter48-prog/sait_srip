@@ -218,6 +218,13 @@ function render(){
 }
 
 /* ---------- аналитика: сколько игроков и на каких серверах ---------- */
+// разноцветная палитра для полосок графика — по кругу, как в
+// референсном скриншоте ("Лавки по серверам" в Market Helper Bot)
+const CHART_COLORS = [
+  "#3aa0ff","#3ecf8e","#ff5c7a","#a06bff","#1fc7c7",
+  "#e0b94a","#ff8a3d","#5ac8fa","#c65bd6","#6c8cff",
+];
+
 function renderAnalytics(){
   const counts = {};
   allPlayers.forEach(p => { counts[p.server] = (counts[p.server] || 0) + 1; });
@@ -234,7 +241,7 @@ function renderAnalytics(){
     return;
   }
 
-  const barH = 22, gap = 8, leftW = 110, rightPad = 34, width = 640;
+  const barH = 24, gap = 10, leftW = 110, rightPad = 34, width = 640;
   const max = entries[0][1];
   const height = entries.length * (barH + gap);
 
@@ -242,10 +249,12 @@ function renderAnalytics(){
   entries.forEach(([server, count], i) => {
     const y = i * (barH + gap);
     const barMaxW = width - leftW - rightPad;
-    const barW = Math.max(4, (count / max) * barMaxW);
-    svg += `<text x="0" y="${y + barH*0.7}" fill="#e7e9ee" font-size="12">${esc(server)}</text>`;
-    svg += `<rect x="${leftW}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="#3aa0ff" opacity="0.85"/>`;
-    svg += `<text x="${leftW + barW + 8}" y="${y + barH*0.7}" fill="#e0b94a" font-size="12" font-weight="700">${count}</text>`;
+    // минимум 6% от макс. ширины, чтобы даже маленькие значения было видно
+    const barW = Math.max(barMaxW * 0.06, (count / max) * barMaxW);
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    svg += `<text x="0" y="${y + barH*0.68}" fill="#e7e9ee" font-size="12.5">${esc(server)}</text>`;
+    svg += `<rect x="${leftW}" y="${y}" width="${barW}" height="${barH}" rx="6" fill="${color}"/>`;
+    svg += `<text x="${leftW + barW + 8}" y="${y + barH*0.68}" fill="${color}" font-size="13" font-weight="700">${count}</text>`;
   });
   svg += `</svg>`;
   wrap.innerHTML = svg;
