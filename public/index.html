@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PC Stats — личный дашборд</title>
+<style>
+  :root{
+    --bg-0:#0a0910;
+    --bg-1:#121020;
+    --bg-2:#181530;
+    --panel:#151228;
+    --line: rgba(255,255,255,0.08);
+    --violet: #8b6bff;
+    --violet-dim: #5c46a8;
+    --green: #33e08a;
+    --gold: #f2c94c;
+    --red: #ff5c5c;
+    --text-hi:#f2f0fb;
+    --text-mid:#a9a3c9;
+    --text-low:#6c6790;
+    --mono: 'JetBrains Mono', 'Consolas', monospace;
+    --disp: 'Rajdhani', 'Oswald', sans-serif;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(139,107,255,0.16), transparent 55%),
+      radial-gradient(ellipse at 100% 0%, rgba(51,224,138,0.08), transparent 45%),
+      var(--bg-0);
+    color:var(--text-hi);
+    font-family:var(--body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--violet);color:#fff;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:50;
+    background:rgba(10,9,16,0.82);backdrop-filter:blur(10px);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;letter-spacing:0.04em;font-size:19px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);}
+  .brand .dot.off{background:var(--red);box-shadow:0 0 10px var(--red);}
+  .brand small{font-family:var(--mono);color:var(--text-low);font-weight:500;font-size:12px;letter-spacing:0.08em;margin-left:6px;}
+  .topbar .updated{font-family:var(--mono);font-size:12px;color:var(--text-low);}
+
+  .wrap{max-width:900px;margin:0 auto;padding:36px 24px 90px;}
+
+  .hero{margin-bottom:28px;}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);margin-bottom:10px;}
+  h1{font-family:var(--disp);font-size:38px;line-height:1.05;font-weight:700;margin:0 0 8px;letter-spacing:0.01em;}
+  .sub{color:var(--text-mid);font-size:15px;max-width:560px;line-height:1.55;}
+
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:26px;}
+  .tab{
+    font-family:var(--disp);font-size:15px;font-weight:600;letter-spacing:0.02em;
+    padding:11px 18px;color:var(--text-low);cursor:pointer;border-bottom:2px solid transparent;
+    transition:color .15s;
+  }
+  .tab.active{color:var(--text-hi);border-color:var(--violet);}
+  .tab:hover{color:var(--text-hi);}
+
+  /* ---------- player tab ---------- */
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px;}
+  .phead{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
+  .avatar{
+    width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:700;font-size:17px;color:#fff;flex:none;background:var(--violet);
+  }
+  .pname{font-family:var(--mono);font-weight:700;font-size:19px;}
+  .pmeta{color:var(--text-low);font-size:12.5px;margin-top:2px;}
+
+  .sec-title{font-family:var(--disp);font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--violet);margin:22px 0 10px;}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:13.5px;}
+  .kv .k{color:var(--text-low);}
+  .kv .v{color:var(--text-hi);font-family:var(--mono);text-align:right;}
+  .grand{
+    margin-top:20px;padding:14px 16px;border-radius:12px;
+    background:linear-gradient(120deg, rgba(242,201,76,0.14), rgba(139,107,255,0.10));
+    border:1px solid rgba(242,201,76,0.25);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .grand .k{font-family:var(--disp);font-size:13px;letter-spacing:0.06em;color:var(--gold);text-transform:uppercase;}
+  .grand .v{font-family:var(--mono);font-weight:700;font-size:19px;color:var(--gold);}
+
+  /* ---------- currency tab ---------- */
+  .rate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+  .rate-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .rate-top{display:flex;justify-content:space-between;align-items:center;}
+  .rate-sym{font-family:var(--disp);font-weight:700;font-size:18px;}
+  .rate-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .rate-val{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:14px;color:var(--text-hi);}
+  .rate-sub{font-size:12px;color:var(--text-low);margin-top:4px;}
+  .rate-updated{font-family:var(--mono);font-size:11px;color:var(--text-low);margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+
+  .empty-note{
+    font-family:var(--mono);font-size:12px;color:var(--text-low);text-align:center;
+    padding:22px;border:1px dashed var(--line);border-radius:12px;margin-top:16px;line-height:1.7;
+  }
+  .token-box{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:420px;margin:60px auto 0;text-align:center;
+  }
+  .token-box input{
+    width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;color:var(--text-hi);
+    padding:11px 14px;font-family:var(--mono);font-size:14px;margin:14px 0;
+  }
+  .token-box button{
+    width:100%;background:var(--violet);border:none;border-radius:10px;color:#fff;font-family:var(--disp);
+    font-weight:700;font-size:14px;padding:11px;cursor:pointer;letter-spacing:0.03em;
+  }
+  .token-box button:hover{background:#7a5aeb;}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  @media (max-width:640px){
+    h1{font-size:30px;}
+    .wrap{padding:24px 16px 70px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot" id="statusDot"></span>PC STATS<small>DASHBOARD</small></div>
+  <div class="updated" id="updatedAt"></div>
+</div>
+
+<div class="wrap">
+
+  <!-- SCREEN 0: нет токена в ссылке -->
+  <div class="screen active" id="screen-token">
+    <div class="token-box">
+      <div class="eyebrow">Личный доступ</div>
+      <div style="color:var(--text-mid);font-size:13.5px;line-height:1.6;">
+        Открой эту страницу по ссылке со своим токеном (тем же, что вписан
+        в настройках скрипта), либо вставь его вручную ниже.
+      </div>
+      <input id="tokenInput" placeholder="твой приватный токен">
+      <button onclick="useToken()">Открыть</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: dashboard -->
+  <div class="screen" id="screen-dash">
+    <div class="hero">
+      <div class="eyebrow" id="dashEyebrow">PC Stats</div>
+      <h1>Мой дашборд</h1>
+      <div class="sub">Данные приходят напрямую из игры через скрипт PC Stats — сайт видит только твою статистику и никому её не показывает без токена.</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="rates" onclick="switchTab('rates')">Валюты</div>
+      <div class="tab" data-tab="player" onclick="switchTab('player')">Игрок и статистика</div>
+    </div>
+
+    <div id="tab-rates"></div>
+    <div id="tab-player" style="display:none;"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   Адрес бэкенда (см. worker.js — пример бэкенда на Cloudflare
+   Workers, разворачивается за 5 минут и бесплатно). Поменяй на
+   свой адрес после деплоя.
+   ============================================================ */
+const API_BASE = "https://ЗАМЕНИ-НА-СВОЙ-WORKER.workers.dev";
+
+let token = null;
+let pollTimer = null;
+
+function money(n){ return Math.round(n||0).toLocaleString('ru-RU'); }
+
+function useToken(){
+  const v = document.getElementById('tokenInput').value.trim();
+  if(!v) return;
+  location.hash = 'token=' + encodeURIComponent(v);
+  boot();
+}
+
+function initials(name){
+  if(!name) return '?';
+  const parts = name.replace('_',' ').split(' ');
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.getElementById('tab-rates').style.display  = tab==='rates'  ? '' : 'none';
+  document.getElementById('tab-player').style.display = tab==='player' ? '' : 'none';
+}
+
+function renderRates(rates, server){
+  const el = document.getElementById('tab-rates');
+  if(!rates){
+    el.innerHTML = '<div class="empty-note">Курсы ещё не приходили. Нажми «Обновить с телефона» на вкладке «Финансы» в игре — курс появится здесь.</div>';
+    return;
+  }
+  const items = [
+    {label:'AZ-Coin', icon:'🪙', color:'#f2c94c', val:rates.az},
+    {label:'BTC',      icon:'₿',  color:'#f2994a', val:rates.btc},
+    {label:'Евро',     icon:'€',  color:'#56ccf2', val:rates.eur},
+    {label:'VC$ (покупка)', icon:'💵', color:'#33e08a', val:rates.vc},
+    {label:'VC$ (продажа)', icon:'💵', color:'#33e08a', val:rates.vcSell},
+    {label:'ASC',      icon:'🎟️', color:'#bb6bff', val:rates.asc},
+  ].filter(c => c.val && c.val > 0);
+  const updated = rates.updated ? new Date(rates.updated).toLocaleString('ru-RU') : '—';
+  el.innerHTML =
+    '<div class="eyebrow" style="margin-bottom:14px;">Сервер: ' + (server || rates.server || '—') + '</div>' +
+    '<div class="rate-grid">' + items.map(c => `
+      <div class="rate-card">
+        <div class="rate-top">
+          <div class="rate-sym">${c.label}</div>
+          <div class="rate-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+        </div>
+        <div class="rate-val">${money(c.val)} SA$</div>
+        <div class="rate-updated">обновлено · ${updated}</div>
+      </div>`).join('') + '</div>';
+}
+
+function renderPlayer(p){
+  const el = document.getElementById('tab-player');
+  if(!p){
+    el.innerHTML = '<div class="empty-note">Статистика ещё не приходила. Открой /stats в игре (или нажми кнопку обновления в скрипте) — данные появятся здесь.</div>';
+    return;
+  }
+  const updated = p.updated ? new Date(p.updated).toLocaleString('ru-RU') : '—';
+  el.innerHTML = `
+    <div class="pcard">
+      <div class="phead">
+        <div class="avatar">${initials(p.nick)}</div>
+        <div>
+          <div class="pname">${p.nick || '—'}</div>
+          <div class="pmeta">${p.server || '—'} · ур. ${p.level || '—'} · ${p.job || '—'}</div>
+        </div>
+      </div>
+
+      <div class="sec-title">👤 Персонаж</div>
+      <div class="kv">
+        <div class="k">Организация</div><div class="v">${p.org || '—'}</div>
+        <div class="k">Статус</div><div class="v">${p.status || '—'}</div>
+        <div class="k">Семья</div><div class="v">${p.family || '—'}</div>
+      </div>
+
+      <div class="sec-title">💰 Финансы</div>
+      <div class="kv">
+        <div class="k">Наличные</div><div class="v">${money(p.cash)} SA$</div>
+        <div class="k">Банк</div><div class="v">${money(p.bank)} SA$</div>
+        <div class="k">Депозит</div><div class="v">${money(p.dep)} SA$</div>
+        <div class="k">Личные счета</div><div class="v">${money(p.acc)} SA$</div>
+        <div class="k">🪙 AZ-Coin</div><div class="v">${p.az || 0}</div>
+        <div class="k">₿ BTC</div><div class="v">${p.btc || 0}</div>
+        <div class="k">€ Евро</div><div class="v">${p.eur || 0}</div>
+        <div class="k">💵 VC$</div><div class="v">${money(p.vc)}</div>
+        <div class="k">🎟️ ASC</div><div class="v">${p.asc || 0}</div>
+      </div>
+
+      <div class="grand">
+        <div class="k">Всего виртов</div>
+        <div class="v">${money(p.grand)} SA$</div>
+      </div>
+      <div class="rate-updated" style="margin-top:16px;">обновлено · ${updated}</div>
+    </div>`;
+}
+
+async function refresh(){
+  try{
+    const res = await fetch(API_BASE.replace(/\/+$/,'') + '/data?token=' + encodeURIComponent(token));
+    const data = await res.json();
+    document.getElementById('statusDot').classList.remove('off');
+    document.getElementById('updatedAt').textContent = 'обновлено ' + new Date().toLocaleTimeString('ru-RU');
+    renderRates(data.rates, data.player && data.player.server);
+    renderPlayer(data.player);
+  }catch(e){
+    document.getElementById('statusDot').classList.add('off');
+    document.getElementById('updatedAt').textContent = 'нет связи с бэкендом';
+  }
+}
+
+function boot(){
+  const m = location.hash.match(/token=([^&]+)/);
+  if(!m){
+    document.getElementById('screen-token').classList.add('active');
+    document.getElementById('screen-dash').classList.remove('active');
+    return;
+  }
+  token = decodeURIComponent(m[1]);
+  document.getElementById('screen-token').classList.remove('active');
+  document.getElementById('screen-dash').classList.add('active');
+  switchTab('rates');
+  refresh();
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(refresh, 20000);
+}
+
+window.addEventListener('hashchange', boot);
+boot();
+</script>
+</body>
+</html>
