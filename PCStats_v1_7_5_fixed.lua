@@ -3017,6 +3017,13 @@ local function fetchRatesViaCEF()
         _cefFetching = false
         _phoneOpBusy = false
     end)
+    if not okThread1 then
+        _phoneFetchState = false
+        _cefFetching     = false
+        _phoneOpBusy     = false
+        St._cefLastResult = "\xce\xf8\xe8\xe1\xea\xe0 \xef\xf0\xe8 \xf1\xee\xe7\xe4\xe0\xed\xe8\xe8 \xef\xee\xf2\xee\xea\xe0 \xe4\xeb\xff \xea\xf0\xe8\xef\xf2\xee\xe2\xe0\xeb\xfe\xf2\xe0"
+        pcall(sampAddChatMessage, "{FF6666}[Stats] " .. tostring(St._cefLastResult), -1)
+    end
 end
 
 -- ============================================================
@@ -3083,19 +3090,24 @@ end
 -- в файле и так почти упёрлись в лимит Lua на 200 локальных переменных)
 local function openTaxAppDirect()
     sendPhoneBytes({220, 0, 80, 64}) -- открыть телефон (домашний экран)
-    lua_thread.create(function()
-        local function sendLaunchApp(appId)
-            local payload = "launchedApp|" .. tostring(appId)
-            local pkt = {220, 18, #payload, 0}
-            for i = 1, #payload do table.insert(pkt, payload:byte(i)) end
-            for _ = 1, 4 do table.insert(pkt, 0) end
-            sendPhoneBytes(pkt)
-        end
-        wait(150)
-        sendLaunchApp(24)   -- раздел
-        wait(150)
-        sendLaunchApp(5656) -- приложение "Налоги"
+    local okThread2 = pcall(function()
+        lua_thread.create(function()
+            local function sendLaunchApp(appId)
+                local payload = "launchedApp|" .. tostring(appId)
+                local pkt = {220, 18, #payload, 0}
+                for i = 1, #payload do table.insert(pkt, payload:byte(i)) end
+                for _ = 1, 4 do table.insert(pkt, 0) end
+                sendPhoneBytes(pkt)
+            end
+            wait(150)
+            sendLaunchApp(24)   -- раздел
+            wait(150)
+            sendLaunchApp(5656) -- приложение "Налоги"
+        end)
     end)
+    if not okThread2 then
+        pcall(sampAddChatMessage, "{FF6666}[Stats] Ошибка при создании потока для налогов", -1)
+    end
 end
 
 -- ============================================================
@@ -3200,12 +3212,17 @@ local function onTaxPaymentSuccess(isAuto, amount)
     -- экране поверх интерфейса игрока — тот же приём, что и в фетче
     -- курса валют выше (sampCloseCurrentDialog(-1) с небольшой паузой,
     -- т.к. игра может ещё показывать экран-подтверждение оплаты) ──
-    lua_thread.create(function()
-        wait(400)
-        pcall(sampCloseCurrentDialog, -1)
-        wait(150)
-        pcall(sampCloseCurrentDialog, -1)
+    local okThread3 = pcall(function()
+        lua_thread.create(function()
+            wait(400)
+            pcall(sampCloseCurrentDialog, -1)
+            wait(150)
+            pcall(sampCloseCurrentDialog, -1)
+        end)
     end)
+    if not okThread3 then
+        pcall(sampAddChatMessage, "{FF6666}[Stats] Ошибка при создании потока закрытия диалога", -1)
+    end
 end
 
 -- запускает оплату: открывает телефон/приложение и переводит state-машину
@@ -3256,7 +3273,8 @@ local function payTaxesNow(isAuto)
         pcall(pcs_notify, u8"\xed\xe5\x20\xf3\xe4\xe0\xeb\xee\xf1\xfc\x20\xee\xf2\xea\xf0\xfb\xf2\xfc\x20\xef\xf0\xe8\xeb\xee\xe6\xe5\xed\xe8\xe5\x20\xcd\xe0\xeb\xee\xe3\xe8\x20\xe2\x20\xf2\xe5\xeb\xe5\xf4\xee\xed\xe5", "error")
         return
     end
-    lua_thread.create(function()
+    local okThread4 = pcall(function()
+        lua_thread.create(function()
         local waited = 0
         local resent = false
         while _taxState ~= 0 and waited < TAX_TIMEOUT_SEC * 1000 do
@@ -3281,6 +3299,10 @@ local function payTaxesNow(isAuto)
             pcall(pcs_notify, u8"\xed\xe0\xeb\xee\xe3\xee\xe2\xfb\xe9\x20\xec\xe5\xed\xfe\x20\xed\xe5\x20\xee\xf2\xea\xf0\xfb\xeb\xf1\xff\x20\xe2\xee\xe2\xf0\xe5\xec\xff", "error")
         end
     end)
+    end)
+    if not okThread4 then
+        pcall(sampAddChatMessage, "{FF6666}[Stats] Ошибка потока налогов", -1)
+    end
 end
 
 -- ---- ключевые слова для распознавания диалогов/сообщений (raw CP1251,
@@ -3560,7 +3582,8 @@ function PD.flush()
 end
 
 -- ---- фоновый поток: автооплата по таймеру ----
-lua_thread.create(function()
+local okThread5 = pcall(function()
+        lua_thread.create(function()
     while true do
         wait(60000) -- раз в минуту — достаточно для часовых интервалов, не грузит
 
@@ -3592,6 +3615,10 @@ lua_thread.create(function()
         end)
     end
 end)
+    end)
+    if not okThread5 then
+        pcall(sampAddChatMessage, "{FF6666}[Stats] Ошибка авто-потока", -1)
+    end
 
 -- ============================================================
 --  Šš Š£Š ŠŠ« Š’ŠŠ›Š®Š¢ ŠŸŠ Š•Š”Š¤Ā  ARZ-WIKI (statichesky snapshot)
