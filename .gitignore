@@ -1,50 +1,14 @@
 ```
-# Temporary files
-*.tmp
-*.temp
+# Lua-specific build artifacts
+*.luac
+?.lua
+!*.lua
 
-# Backup files
-*~
-*.bak
-*.backup
+# Crash protection and reporting files
+crash_reporter_template.lua
+add_crash_protection.lua
 
-# Log files
-*.log
-
-# Environment files
-.env
-.env.local
-*.env.*
-
-# IDE specific
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Build artifacts
-build/
-dist/
-target/
-
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# OS generated
-.DS_Store
-Thumbs.db
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
+# PC Stats related files
+PCStats_*.lua
+!PCStats_*.lua
 ```

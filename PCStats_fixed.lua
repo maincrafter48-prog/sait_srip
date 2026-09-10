@@ -13,7 +13,7 @@ local _registeredMenuCmd = nil
 -- St как к глобальной переменной (которая всегда nil) — падало при
 -- каждом вызове saveCfg из onTaxPaymentSuccess и т.п. Объявляем local
 -- заранее, а саму таблицу заполняем на прежнем месте ниже по файлу.
-local St
+local St  -- будет инициализирована ниже в строке ~820
 
 pcall(require, 'lib.moonloader')
 local _encoding = require('encoding')
@@ -819,9 +819,9 @@ end
 -- ============================================================
  St = {}  -- consolidated frame-state table (keeps OnFrame's upvalue count under LuaJIT's 60 limit); local объявлен раньше по файлу, см. фикс выше
 St.UI_SCALE      = 1.0   -- pereschityvaetsya kazhdyi kadr po DisplaySize
- St.UI_SCALE_MIN  = 0.88
- St.UI_SCALE_MAX  = 1.65
- St._lastSw, St._lastSh = 0, 0  -- poslednie izvestnye razmery ekrana (detekt smeny razresheniya)
+St.UI_SCALE_MIN  = 0.88
+St.UI_SCALE_MAX  = 1.65
+St._lastSw, St._lastSh = 0, 0  -- poslednie izvestnye razmery ekrana (detekt smeny razresheniya)
 
 local function S(n)
     return math.floor(n * St.UI_SCALE + 0.5)
@@ -3016,7 +3016,6 @@ local function fetchRatesViaCEF()
         _cefFetching = false
         _phoneOpBusy = false
     end)
-end
 
 -- ============================================================
 --  ОПЛАТА НАЛОГОВ (вкладка "Налоги")
