@@ -822,6 +822,8 @@ St.UI_SCALE      = 1.0   -- pereschityvaetsya kazhdyi kadr po DisplaySize
  St.UI_SCALE_MIN  = 0.88
  St.UI_SCALE_MAX  = 1.65
  St._lastSw, St._lastSh = 0, 0  -- poslednie izvestnye razmery ekrana (detekt smeny razresheniya)
+ St._crashInfo    = nil  -- informatsiya o poslednem krashe dlya crash-menu
+ St._errorCount   = 0    -- schyotchik oshibok dlya avto-vosstanovleniya
 
 local function S(n)
     return math.floor(n * St.UI_SCALE + 0.5)
